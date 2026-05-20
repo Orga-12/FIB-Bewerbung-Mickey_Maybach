@@ -820,7 +820,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;bac
       <div class="dept-head">
         <div class="dept-head-l">
           <div class="dept-code">HR</div>
-          <div><div class="dept-name">Human Ressource</div><div class="dept-fullname">Personalmanagement & Mitarbeiterverwaltung</div></div>
+          <div><div class="dept-name">Humane Ressource</div><div class="dept-fullname">Personalmanagement & Mitarbeiterverwaltung</div></div>
         </div>
         <div class="dept-toggle">+</div>
       </div>
@@ -834,7 +834,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;bac
     <div class="dept-item reveal" onclick="toggleDept(this)">
       <div class="dept-head">
         <div class="dept-head-l">
-          <div class="dept-code">FIBCO</div>
+          <div class="dept-code">F.I.B.C.O</div>
           <div><div class="dept-name">Corruption Office</div><div class="dept-fullname">Interne Ermittlungen & Korruptionsbekämpfung</div></div>
         </div>
         <div class="dept-toggle">+</div>
@@ -1325,6 +1325,84 @@ function copyContact(btn,text){
     setTimeout(()=>{btn.textContent='KOPIEREN';btn.classList.remove('copied');},2000);
   });
 }
+/* ===== KOPIERSCHUTZ ===== */
+(function(){
+  // 1) Rechtsklick deaktivieren
+  document.addEventListener('contextmenu', e => e.preventDefault());
+
+  // 2) Tastenkombinationen blockieren (Strg+C, Strg+U, Strg+S, Strg+A, F12, Strg+Shift+I/J/C)
+  document.addEventListener('keydown', e => {
+    const blocked = (
+      (e.ctrlKey && ['c','u','s','a','p'].includes(e.key.toLowerCase())) ||
+      (e.ctrlKey && e.shiftKey && ['i','j','c','k'].includes(e.key.toLowerCase())) ||
+      e.key === 'F12'
+    );
+    if (blocked) e.preventDefault();
+  });
+
+  // 3) Textauswahl per CSS verhindern
+  const style = document.createElement('style');
+  style.textContent = `
+    * {
+      -webkit-user-select: none !important;
+      -moz-user-select: none !important;
+      -ms-user-select: none !important;
+      user-select: none !important;
+    }
+    input, textarea { user-select: text !important; }
+  `;
+  document.head.appendChild(style);
+
+  // 4) Drag & Drop von Bildern verhindern
+  document.addEventListener('dragstart', e => e.preventDefault());
+
+  // 5) Drucken blockieren (Strg+P & window.print)
+  window.addEventListener('beforeprint', e => e.stopImmediatePropagation(), true);
+  const origPrint = window.print;
+  window.print = () => {};
+
+  // 6) DevTools-Erkennung: Seite unbrauchbar machen wenn DevTools offen
+  let devOpen = false;
+  const threshold = 160;
+  setInterval(() => {
+    const widthDiff  = window.outerWidth  - window.innerWidth  > threshold;
+    const heightDiff = window.outerHeight - window.innerHeight > threshold;
+    if ((widthDiff || heightDiff) && !devOpen) {
+      devOpen = true;
+      document.body.style.filter = 'blur(20px)';
+      document.body.style.pointerEvents = 'none';
+      const warn = document.createElement('div');
+      warn.id = 'devtools-warn';
+      warn.style.cssText = `
+        position:fixed;inset:0;z-index:999999;display:flex;
+        align-items:center;justify-content:center;
+        background:rgba(10,22,40,.97);
+        font-family:'Orbitron',sans-serif;font-size:20px;
+        letter-spacing:4px;color:#4a8fe8;text-align:center;
+        flex-direction:column;gap:16px;
+      `;
+      warn.innerHTML = `
+        <div style="font-size:48px">🔒</div>
+        <div>ZUGRIFF VERWEIGERT</div>
+        <div style="font-size:11px;color:#6a7a9a;letter-spacing:2px;">DEVELOPER TOOLS ERKANNT</div>
+      `;
+      document.body.appendChild(warn);
+    }
+    if (!widthDiff && !heightDiff && devOpen) {
+      devOpen = false;
+      document.body.style.filter = '';
+      document.body.style.pointerEvents = '';
+      const warn = document.getElementById('devtools-warn');
+      if (warn) warn.remove();
+    }
+  }, 500);
+
+  // 7) Unsichtbares Wasserzeichen auf alle Bilder (Canvas-Fingerprint)
+  document.querySelectorAll('img').forEach(img => {
+    img.addEventListener('dragstart', e => e.preventDefault());
+  });
+
+})();
 </script>
 </body>
 </html>
